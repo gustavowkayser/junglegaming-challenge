@@ -8,11 +8,10 @@ export abstract class ApplicationError extends Error {
 }
 
 export class ValidationError extends ApplicationError {
-    readonly code = "VALIDATION_FAILED";
-
     constructor(
         message: string,
         readonly details?: unknown,
+        readonly code: "VALIDATION_FAILED" | "IDEMPOTENCY_KEY_REQUIRED" = "VALIDATION_FAILED",
     ) {
         super(message);
     }

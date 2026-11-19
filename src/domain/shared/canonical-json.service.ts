@@ -14,6 +14,10 @@ function canonicalize(value: unknown, path: string): string {
             }
             return JSON.stringify(value);
         case "object": {
+            const serializable = value as { toJSON?: () => unknown };
+            if (typeof serializable.toJSON === "function") {
+                return canonicalize(serializable.toJSON(), path);
+            }
             if (Array.isArray(value)) {
                 return `[${value.map((item, index) => canonicalize(item, `${path}[${index}]`)).join(",")}]`;
             }

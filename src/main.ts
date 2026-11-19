@@ -5,7 +5,7 @@ import { EnvironmentService } from "./infrastructure/config/environment.service"
 import { AppLogger } from "./infrastructure/observability/logger.service";
 
 async function bootstrap(): Promise<void> {
-    const app = await NestFactory.create(AppModule, { bufferLogs: true });
+    const app = await NestFactory.create(AppModule.forRoot(), { bufferLogs: true });
     const logger = app.get(AppLogger);
     const environment = app.get(EnvironmentService);
     app.useLogger(logger);

@@ -1,10 +1,24 @@
-import { Module } from "@nestjs/common";
+import { type DynamicModule, Module } from "@nestjs/common";
+import { ApplicationModule } from "./application.module";
 import { AppConfigModule } from "./config/config.module";
 import { HealthModule } from "./health/health.module";
+import { HttpModule } from "./http/http.module";
 import { ObservabilityModule } from "./observability/observability.module";
 import { PersistenceModule } from "./persistence/persistence.module";
 
-@Module({
-    imports: [AppConfigModule, ObservabilityModule, PersistenceModule, HealthModule],
-})
-export class AppModule {}
+@Module({})
+export class AppModule {
+    static forRoot(): DynamicModule {
+        return {
+            module: AppModule,
+            imports: [
+                AppConfigModule.forRoot(),
+                ObservabilityModule,
+                PersistenceModule,
+                ApplicationModule,
+                HealthModule,
+                HttpModule,
+            ],
+        };
+    }
+}
