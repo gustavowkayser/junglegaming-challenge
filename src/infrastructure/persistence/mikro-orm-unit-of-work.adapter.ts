@@ -1,0 +1,49 @@
+import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
+import { ApplicationError } from "../../application/errors/application.error";
+import type { TransactionalRepositories, UnitOfWork } from "../../application/ports/unit-of-work.port";
+import { DomainError } from "../../domain/shared/domain.error";
+import { translatePostgresError } from "./postgres-error.service";
+import { MikroOrmInboxMessageRepository } from "./repositories/mikro-orm-inbox-message.repository";
+import { MikroOrmOutboxMessageRepository } from "./repositories/mikro-orm-outbox-message.repository";
+import { MikroOrmWagerTransactionRepository } from "./repositories/mikro-orm-wager-transaction.repository";
+import { MikroOrmWalletRepository } from "./repositories/mikro-orm-wallet.repository";
+import { MikroOrmWalletLedgerEntryRepository } from "./repositories/mikro-orm-wallet-ledger-entry.repository";
+
+export interface UnitOfWorkSettings {
+    lockTimeoutMs: number;
+    statementTimeoutMs: number;
+}
+
+export function repositoriesFor(em: EntityManager): TransactionalRepositories {
+    return {
+        wallets: new MikroOrmWalletRepository(em),
+        ledger: new MikroOrmWalletLedgerEntryRepository(em),
+        transactions: new MikroOrmWagerTransactionRepository(em),
+        inbox: new MikroOrmInboxMessageRepository(em),
+        outbox: new MikroOrmOutboxMessageRepository(em),
+    };
+}
+
+export class MikroOrmUnitOfWork implements UnitOfWork {
+    constructor(
+        private readonly orm: MikroORM,
+        private readonly settings: UnitOfWorkSettings,
+    ) {}
+
+    async run<T>(work: (repositories: TransactionalRepositories) => Promise<T>): Promise<T> {
+        try {
+            return await this.orm.em.fork().transactional(async (em) => {
+                await em.execute(
+                    "select set_config('lock_timeout', ?, true), set_config('statement_timeout', ?, true)",
+                    [`${this.settings.lockTimeoutMs}ms`, `${this.settings.statementTimeoutMs}ms`],
+                );
+                return work(repositoriesFor(em));
+            });
+        } catch (error) {
+            if (error instanceof ApplicationError || error instanceof DomainError) {
+                throw error;
+            }
+            throw translatePostgresError(error);
+        }
+    }
+}
