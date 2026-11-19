@@ -14,13 +14,14 @@ import type { Clock } from "../ports/clock.port";
 import type { IdGenerator } from "../ports/id-generator.port";
 import type { Metrics } from "../ports/metrics.port";
 import type { TransactionalRepositories, UnitOfWork } from "../ports/unit-of-work.port";
+import { withConflictRetry } from "../shared/conflict-retry.service";
 import type { EventContextFactory } from "../shared/event-context.factory";
 import type { SubmitWagerTransactionCommand } from "./submit-wager-transaction.command";
 import { outcomeEvents, toOutboxMessages } from "./wager-outcome-events.service";
 import { toWagerTransactionResult, type WagerTransactionResult } from "./wager-transaction.view";
 import type { WagerPayloadHasher } from "./wager-transaction-payload.service";
 
-const MAX_ATTEMPTS = 2;
+const MAX_ATTEMPTS = 3;
 
 export class SubmitWagerTransactionUseCase {
     constructor(
@@ -37,25 +38,14 @@ export class SubmitWagerTransactionUseCase {
         const startedAt = performance.now();
         const command = this.normalize(input);
         const payloadHash = this.hashOf(command);
-        for (let attempt = 1; ; attempt += 1) {
-            try {
-                const result = await this.unitOfWork.run((repositories) =>
-                    this.process(repositories, command, payloadHash),
-                );
-                this.metrics.observeProcessing(command.source, (performance.now() - startedAt) / 1000);
-                if (!result.idempotentReplay) {
-                    this.metrics.transactionFinished(command.kind, result.status, command.source);
-                }
-                return result;
-            } catch (error) {
-                if (error instanceof UniqueConstraintRaceError && attempt < MAX_ATTEMPTS) {
-                    this.metrics.lockConflict("unique_race");
-                    this.metrics.retryScheduled("use_case", "unique_race");
-                    continue;
-                }
-                throw error;
-            }
+        const result = await withConflictRetry(this.metrics, MAX_ATTEMPTS, () =>
+            this.unitOfWork.run((repositories) => this.process(repositories, command, payloadHash)),
+        );
+        this.metrics.observeProcessing(command.source, (performance.now() - startedAt) / 1000);
+        if (!result.idempotentReplay) {
+            this.metrics.transactionFinished(command.kind, result.status, command.source);
         }
+        return result;
     }
 
     private async process(
