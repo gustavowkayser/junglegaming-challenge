@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { moneySchema, uuidSchema } from "./money.schema";
+import { moneySchema, uuidSchema } from "../../contracts/money.schema";
 
 export const createWalletSchema = z
     .object({

@@ -62,6 +62,14 @@ export async function deleteTestQueues(queues: TestQueues): Promise<void> {
     }
 }
 
+function parseBody(body: string | undefined): Record<string, unknown> {
+    try {
+        return JSON.parse(body ?? "{}");
+    } catch {
+        return { raw: body };
+    }
+}
+
 export interface ReceivedMessage {
     body: Record<string, unknown>;
     attributes: Record<string, string>;
@@ -103,7 +111,7 @@ export async function drainQueue(
                 seen.add(message.MessageId);
             }
             received.push({
-                body: JSON.parse(message.Body ?? "{}"),
+                body: parseBody(message.Body),
                 attributes: (message.Attributes ?? {}) as Record<string, string>,
                 messageAttributes: Object.fromEntries(
                     Object.entries(message.MessageAttributes ?? {}).map(([key, value]) => [

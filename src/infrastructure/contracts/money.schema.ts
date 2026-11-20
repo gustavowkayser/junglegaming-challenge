@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Money } from "../../../domain/money/money.value-object";
+import { Money } from "../../domain/money/money.value-object";
 
 export const moneySchema = z
     .object({

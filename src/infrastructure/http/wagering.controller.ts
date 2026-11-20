@@ -4,15 +4,15 @@ import { ValidationError } from "../../application/errors/application.error";
 import { PROVIDER_IDENTITY, type ProviderIdentityPort } from "../../application/ports/provider-identity.port";
 import { GetWagerTransactionUseCase } from "../../application/wagering/get-wager-transaction.use-case";
 import { SubmitWagerTransactionUseCase } from "../../application/wagering/submit-wager-transaction.use-case";
-import { RequestContext } from "../observability/request-context.service";
-import { TRANSACTION_STATUS_HTTP } from "./error-status.service";
-import { type AuthenticatedRequest, ProviderAuthGuard } from "./provider-auth.guard";
-import { currentCorrelationId, requireUuid } from "./request-identity.service";
 import {
     idempotencyKeySchema,
     type WagerTransactionFields,
     wagerTransactionFieldsSchema,
-} from "./schemas/submit-wager-transaction.schema";
+} from "../contracts/wager-transaction.schema";
+import { RequestContext } from "../observability/request-context.service";
+import { TRANSACTION_STATUS_HTTP } from "./error-status.service";
+import { type AuthenticatedRequest, ProviderAuthGuard } from "./provider-auth.guard";
+import { currentCorrelationId, requireUuid } from "./request-identity.service";
 import { ZodValidationPipe } from "./zod-validation.pipe";
 
 @Controller("wagering/transactions")

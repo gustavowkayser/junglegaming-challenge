@@ -44,7 +44,9 @@ services:
             retries: 40
 
     migrate:
-        build: .
+        build:
+            context: .
+            target: runtime
         command: ["bun", "run", "db:migrate"]
         environment: *app-environment
         depends_on:
@@ -52,7 +54,9 @@ services:
                 condition: service_healthy
 
     app:
-        build: .
+        build:
+            context: .
+            target: runtime
         environment: *app-environment
         deploy:
             replicas: 3
@@ -65,6 +69,20 @@ services:
                 condition: service_healthy
             migrate:
                 condition: service_completed_successfully
+
+    tests:
+        profiles: ["test"]
+        build:
+            context: .
+            target: test
+        environment:
+            <<: *app-environment
+            NODE_ENV: test
+        depends_on:
+            postgres:
+                condition: service_healthy
+            localstack:
+                condition: service_healthy
 
 volumes:
     postgres-data:

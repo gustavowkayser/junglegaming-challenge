@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SUBMITTABLE_KINDS } from "../../../domain/wagering/wager-transaction-kind.enum";
+import { SUBMITTABLE_KINDS } from "../../domain/wagering/wager-transaction-kind.enum";
 import { identifierSchema, moneySchema, uuidSchema } from "./money.schema";
 
 export const wagerTransactionFieldsSchema = z
