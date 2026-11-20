@@ -42,8 +42,8 @@ export class PublishOutboxUseCase {
                     message.scheduleRetry(now, failures.get(message.id) ?? "not acknowledged by broker");
                     this.metrics.retryScheduled("outbox", "publish_failed");
                 }
-                await repositories.outbox.update(message);
             }
+            await repositories.outbox.updateMany(batch);
             this.metrics.outboxPublished(published.size);
             return { claimed: batch.map((message) => message.id), published: published.size, failed: failures.size };
         });

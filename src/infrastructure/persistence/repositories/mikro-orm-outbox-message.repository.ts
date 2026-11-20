@@ -9,6 +9,17 @@ interface PendingRow {
     oldest: Date | string | null;
 }
 
+const BULK_UPDATE_SQL = `
+    update outbox_messages as outbox
+    set attempts = changes.attempts,
+        next_attempt_at = changes.next_attempt_at,
+        published_at = changes.published_at,
+        last_error = changes.last_error
+    from jsonb_to_recordset(?::jsonb)
+        as changes (id uuid, attempts integer, next_attempt_at timestamptz, published_at timestamptz, last_error text)
+    where outbox.id = changes.id
+`;
+
 export class MikroOrmOutboxMessageRepository implements OutboxMessageRepository {
     constructor(private readonly em: EntityManager) {}
 
@@ -48,6 +59,21 @@ export class MikroOrmOutboxMessageRepository implements OutboxMessageRepository 
                 lastError: record.lastError,
             },
         );
+    }
+
+    async updateMany(messages: readonly OutboxMessage[]): Promise<void> {
+        if (messages.length === 0) {
+            return;
+        }
+        const records = messages.map((message) => OutboxMessageMapper.toRecord(message));
+        const changes = records.map((record) => ({
+            id: record.id,
+            attempts: record.attempts,
+            next_attempt_at: record.nextAttemptAt.toISOString(),
+            published_at: record.publishedAt?.toISOString() ?? null,
+            last_error: record.lastError,
+        }));
+        await this.em.execute(BULK_UPDATE_SQL, [JSON.stringify(changes)]);
     }
 
     async pendingStats(): Promise<OutboxPendingStats> {

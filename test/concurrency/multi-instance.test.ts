@@ -19,6 +19,7 @@ let queues: TestQueues;
 let cluster: Cluster;
 
 beforeAll(async () => {
+    await truncateAll();
     queues = await createTestQueues({ visibilityTimeoutSeconds: 5 });
     cluster = await Cluster.start(3, queues.env);
 });

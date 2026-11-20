@@ -9,5 +9,6 @@ export interface OutboxMessageRepository {
     insert(messages: OutboxMessage[]): Promise<void>;
     claimDue(now: Date, limit: number): Promise<OutboxMessage[]>;
     update(message: OutboxMessage): Promise<void>;
+    updateMany(messages: readonly OutboxMessage[]): Promise<void>;
     pendingStats(): Promise<OutboxPendingStats>;
 }
