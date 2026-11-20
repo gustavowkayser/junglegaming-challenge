@@ -1,5 +1,6 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { describeError } from "../observability/error-description.service";
 import { AppLogger } from "../observability/logger.service";
 import { httpErrorFor } from "./error-status.service";
 
@@ -21,7 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 route: request.route?.path ?? request.path,
                 status: mapped.status,
                 code: mapped.body.error.code,
-                err: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error,
+                err: describeError(error),
             });
         }
         for (const [header, value] of Object.entries(mapped.headers)) {

@@ -15,8 +15,8 @@ export function testOrm(): Promise<MikroORM> {
     return ormPromise;
 }
 
-export async function testUnitOfWork(settings = { lockTimeoutMs: 5000, statementTimeoutMs: 15000 }) {
-    return new MikroOrmUnitOfWork(await testOrm(), settings);
+export async function testUnitOfWork() {
+    return new MikroOrmUnitOfWork(await testOrm());
 }
 
 export async function sqlEm(): Promise<EntityManager> {

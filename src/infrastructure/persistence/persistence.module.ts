@@ -28,17 +28,15 @@ class OrmLifecycle implements OnApplicationShutdown {
                     createMikroOrmConfig({
                         DATABASE_URL: environment.get("DATABASE_URL"),
                         DB_POOL_MAX: environment.get("DB_POOL_MAX"),
+                        DB_LOCK_TIMEOUT_MS: environment.get("DB_LOCK_TIMEOUT_MS"),
+                        DB_STATEMENT_TIMEOUT_MS: environment.get("DB_STATEMENT_TIMEOUT_MS"),
                     }),
                 ),
         },
         {
             provide: UNIT_OF_WORK,
-            inject: [MikroORM, EnvironmentService],
-            useFactory: (orm: MikroORM, environment: EnvironmentService) =>
-                new MikroOrmUnitOfWork(orm, {
-                    lockTimeoutMs: environment.get("DB_LOCK_TIMEOUT_MS"),
-                    statementTimeoutMs: environment.get("DB_STATEMENT_TIMEOUT_MS"),
-                }),
+            inject: [MikroORM],
+            useFactory: (orm: MikroORM) => new MikroOrmUnitOfWork(orm),
         },
         OrmLifecycle,
         PostgresReadinessIndicator,

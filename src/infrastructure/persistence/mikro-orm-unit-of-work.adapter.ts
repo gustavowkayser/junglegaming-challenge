@@ -9,11 +9,6 @@ import { MikroOrmWagerTransactionRepository } from "./repositories/mikro-orm-wag
 import { MikroOrmWalletRepository } from "./repositories/mikro-orm-wallet.repository";
 import { MikroOrmWalletLedgerEntryRepository } from "./repositories/mikro-orm-wallet-ledger-entry.repository";
 
-export interface UnitOfWorkSettings {
-    lockTimeoutMs: number;
-    statementTimeoutMs: number;
-}
-
 export function repositoriesFor(em: EntityManager): TransactionalRepositories {
     return {
         wallets: new MikroOrmWalletRepository(em),
@@ -25,20 +20,11 @@ export function repositoriesFor(em: EntityManager): TransactionalRepositories {
 }
 
 export class MikroOrmUnitOfWork implements UnitOfWork {
-    constructor(
-        private readonly orm: MikroORM,
-        private readonly settings: UnitOfWorkSettings,
-    ) {}
+    constructor(private readonly orm: MikroORM) {}
 
     async run<T>(work: (repositories: TransactionalRepositories) => Promise<T>): Promise<T> {
         try {
-            return await this.orm.em.fork().transactional(async (em) => {
-                await em.execute(
-                    "select set_config('lock_timeout', ?, true), set_config('statement_timeout', ?, true)",
-                    [`${this.settings.lockTimeoutMs}ms`, `${this.settings.statementTimeoutMs}ms`],
-                );
-                return work(repositoriesFor(em));
-            });
+            return await this.orm.em.fork().transactional((em) => work(repositoriesFor(em)));
         } catch (error) {
             if (error instanceof ApplicationError || error instanceof DomainError) {
                 throw error;

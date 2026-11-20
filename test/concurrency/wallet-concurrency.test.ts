@@ -31,7 +31,7 @@ describe("concurrency on a single wallet", () => {
 
         const responses = await Promise.all(Array.from({ length: 50 }, () => testApp.http.submit(bet)));
 
-        expect(responses.every((response) => response.status === 200)).toBe(true);
+        expect(responses.filter((response) => response.status !== 200).map((response) => response.body)).toEqual([]);
         expect(new Set(responses.map((response) => response.body.transactionId)).size).toBe(1);
         expect(responses.filter((response) => !response.body.idempotentReplay).length).toBe(1);
         expect(responses.every((response) => response.body.balance?.amount === "975.00")).toBe(true);
@@ -76,7 +76,7 @@ describe("concurrency on a single wallet", () => {
 
         const responses = await Promise.all(operations.map((operation) => testApp.http.submit(operation)));
 
-        expect(responses.every((response) => response.status === 200)).toBe(true);
+        expect(responses.filter((response) => response.status !== 200).map((response) => response.body)).toEqual([]);
         const wins = operations.filter((operation) => operation.kind === "WIN").length;
         const bets = operations.length - wins;
         const expected = (50_000 + wins * 750 - bets * 525) / 100;
@@ -114,7 +114,7 @@ describe("concurrency across wallets", () => {
 
         const responses = await Promise.all(operations.map((operation) => testApp.http.submit(operation)));
 
-        expect(responses.every((response) => response.status === 200)).toBe(true);
+        expect(responses.filter((response) => response.status !== 200).map((response) => response.body)).toEqual([]);
         for (const target of wallets) {
             expect(await walletBalance(target.walletId)).toBe("45.00");
         }
