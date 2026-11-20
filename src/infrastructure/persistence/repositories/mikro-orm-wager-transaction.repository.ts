@@ -39,6 +39,19 @@ export class MikroOrmWagerTransactionRepository implements WagerTransactionRepos
         return records.map((record) => record.id);
     }
 
+    expeditePendingDependents(providerId: string, externalTransactionId: string, now: Date): Promise<number> {
+        return this.em.nativeUpdate(
+            WagerTransactionRecord,
+            {
+                status: WagerTransactionStatus.PendingReference,
+                providerId,
+                referenceExternalTransactionId: externalTransactionId,
+                nextReferenceAttemptAt: { $gt: now },
+            },
+            { nextReferenceAttemptAt: now },
+        );
+    }
+
     async insert(transaction: WagerTransaction): Promise<void> {
         await this.em.insert(WagerTransactionRecord, WagerTransactionMapper.toRecord(transaction));
     }

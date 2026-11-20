@@ -105,6 +105,11 @@ export class Migration20261119000000 extends Migration {
             create index wager_transactions_pending_reference_ix on wager_transactions (next_reference_attempt_at)
                 where status = 'PENDING_REFERENCE';
         `);
+        this.addSql(`
+            create index wager_transactions_pending_dependents_ix
+                on wager_transactions (provider_id, reference_external_transaction_id)
+                where status = 'PENDING_REFERENCE';
+        `);
         this.addSql(`create index wager_transactions_wallet_ix on wager_transactions (wallet_id, created_at);`);
 
         this.addSql(`

@@ -4,6 +4,7 @@ import type { EventPublisher } from "../../src/application/ports/event-publisher
 import type { FaultInjector } from "../../src/application/ports/fault-injector.port";
 import type { UnitOfWork } from "../../src/application/ports/unit-of-work.port";
 import { EventContextFactory } from "../../src/application/shared/event-context.factory";
+import { ResolvePendingReferencesUseCase } from "../../src/application/wagering/resolve-pending-references.use-case";
 import { SubmitWagerTransactionUseCase } from "../../src/application/wagering/submit-wager-transaction.use-case";
 import { WagerPayloadHasher } from "../../src/application/wagering/wager-transaction-payload.service";
 import { CreateWalletUseCase } from "../../src/application/wallet/create-wallet.use-case";
@@ -64,4 +65,16 @@ export async function seedWallet(unitOfWork: UnitOfWork, amount = "100.00") {
         correlationId: "seed",
     });
     return { walletId: wallet.id, playerId: wallet.playerId };
+}
+
+export function resolveUseCase(unitOfWork: UnitOfWork, policy = referencePolicy(), batchSize = 50) {
+    return new ResolvePendingReferencesUseCase(
+        unitOfWork,
+        new WagerSettlementService(policy),
+        ids,
+        clock,
+        new EventContextFactory(ids, clock),
+        metrics,
+        batchSize,
+    );
 }

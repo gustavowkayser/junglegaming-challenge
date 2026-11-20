@@ -111,6 +111,13 @@ export class SubmitWagerTransactionUseCase {
         await repositories.outbox.insert(
             toOutboxMessages(outcomeEvents(transaction, wallet, entry, () => this.events.create(command, now))),
         );
+        if (transaction.isTerminal()) {
+            await repositories.transactions.expeditePendingDependents(
+                transaction.providerId,
+                transaction.externalTransactionId,
+                now,
+            );
+        }
         await this.completeInbox(repositories, inbox, now);
         return toWagerTransactionResult(transaction, false);
     }

@@ -6,6 +6,7 @@ export interface WagerTransactionRepository {
     findByProviderExternalId(providerId: string, externalTransactionId: string): Promise<WagerTransaction | undefined>;
     hasProcessedReversal(referenceTransactionId: string): Promise<boolean>;
     findDuePendingReferenceIds(now: Date, limit: number): Promise<string[]>;
+    expeditePendingDependents(providerId: string, externalTransactionId: string, now: Date): Promise<number>;
     insert(transaction: WagerTransaction): Promise<void>;
     update(transaction: WagerTransaction): Promise<void>;
 }
