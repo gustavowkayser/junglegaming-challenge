@@ -13,11 +13,12 @@ import { WagerPayloadHasher } from "../application/wagering/wager-transaction-pa
 import { CreateWalletUseCase } from "../application/wallet/create-wallet.use-case";
 import { GetWalletUseCase } from "../application/wallet/get-wallet.use-case";
 import { ListWalletLedgerUseCase } from "../application/wallet/list-wallet-ledger.use-case";
+import { ReconcileWalletUseCase } from "../application/wallet/reconcile-wallet.use-case";
 import { ReferenceRetryPolicy } from "../domain/wagering/reference-retry-policy.service";
 import { WagerSettlementService } from "../domain/wagering/wager-settlement.service";
 import { PassThroughProviderIdentity } from "./auth/pass-through-provider-identity.adapter";
 import { EnvironmentService } from "./config/environment.service";
-import { NoopMetrics } from "./observability/noop-metrics.adapter";
+import { PromMetrics } from "./observability/prom-metrics.adapter";
 import { EnvFaultInjector } from "./system/env-fault-injector.adapter";
 import { Sha256PayloadHasher } from "./system/sha256-payload-hasher.adapter";
 import { SystemClock } from "./system/system-clock.adapter";
@@ -29,7 +30,12 @@ import { UuidV7IdGenerator } from "./system/uuid-v7-id-generator.adapter";
         { provide: CLOCK, useClass: SystemClock },
         { provide: ID_GENERATOR, useClass: UuidV7IdGenerator },
         { provide: PAYLOAD_HASHER, useClass: Sha256PayloadHasher },
-        { provide: METRICS, useClass: NoopMetrics },
+        {
+            provide: METRICS,
+            inject: [UNIT_OF_WORK],
+            useFactory: (unitOfWork: UnitOfWork) =>
+                new PromMetrics(() => unitOfWork.run((repositories) => repositories.outbox.pendingStats())),
+        },
         { provide: PROVIDER_IDENTITY, useClass: PassThroughProviderIdentity },
         {
             provide: FAULT_INJECTOR,
@@ -105,6 +111,11 @@ import { UuidV7IdGenerator } from "./system/uuid-v7-id-generator.adapter";
             useFactory: (unitOfWork: UnitOfWork) => new ListWalletLedgerUseCase(unitOfWork),
         },
         {
+            provide: ReconcileWalletUseCase,
+            inject: [UNIT_OF_WORK, METRICS],
+            useFactory: (unitOfWork: UnitOfWork, metrics: Metrics) => new ReconcileWalletUseCase(unitOfWork, metrics),
+        },
+        {
             provide: GetWagerTransactionUseCase,
             inject: [UNIT_OF_WORK],
             useFactory: (unitOfWork: UnitOfWork) => new GetWagerTransactionUseCase(unitOfWork),
@@ -126,6 +137,7 @@ import { UuidV7IdGenerator } from "./system/uuid-v7-id-generator.adapter";
         GetWalletUseCase,
         ListWalletLedgerUseCase,
         GetWagerTransactionUseCase,
+        ReconcileWalletUseCase,
     ],
 })
 export class ApplicationModule {}

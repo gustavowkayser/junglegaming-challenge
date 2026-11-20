@@ -9,6 +9,7 @@ import {
     type WagerTransactionFields,
     wagerTransactionFieldsSchema,
 } from "../contracts/wager-transaction.schema";
+import { AppLogger } from "../observability/logger.service";
 import { RequestContext } from "../observability/request-context.service";
 import { TRANSACTION_STATUS_HTTP } from "./error-status.service";
 import { type AuthenticatedRequest, ProviderAuthGuard } from "./provider-auth.guard";
@@ -22,6 +23,7 @@ export class WageringController {
         private readonly submit: SubmitWagerTransactionUseCase,
         private readonly transactions: GetWagerTransactionUseCase,
         @Inject(PROVIDER_IDENTITY) private readonly identities: ProviderIdentityPort,
+        private readonly logger: AppLogger,
     ) {}
 
     @Post()
@@ -47,6 +49,14 @@ export class WageringController {
             correlationId: currentCorrelationId(),
         });
         RequestContext.assign({ transactionId: result.transactionId });
+        this.logger.log({
+            event: "wager.transaction_submitted",
+            source: "http",
+            kind: body.kind,
+            status: result.status,
+            failureCode: result.failureCode,
+            replay: result.idempotentReplay,
+        });
         response.status(TRANSACTION_STATUS_HTTP[result.status] ?? 500);
         return result;
     }

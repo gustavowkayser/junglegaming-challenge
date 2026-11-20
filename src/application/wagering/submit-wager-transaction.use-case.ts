@@ -65,7 +65,7 @@ export class SubmitWagerTransactionUseCase {
 
         const wallet = await repositories.wallets.findByIdForUpdate(command.walletId);
         if (!wallet) {
-            throw new NotFoundError("WALLET_NOT_FOUND", `Wallet ${command.walletId} does not exist`);
+            throw new NotFoundError("WALLET_NOT_FOUND", `Wallet ${command.walletId} does not exist`, "payload");
         }
 
         const existing =

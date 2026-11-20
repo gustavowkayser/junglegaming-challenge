@@ -41,15 +41,12 @@ function response(status: number, code: string, message: string, details?: unkno
     };
 }
 
-export function httpErrorFor(error: unknown, operation: "query" | "command"): HttpErrorResponse {
+export function httpErrorFor(error: unknown): HttpErrorResponse {
     if (error instanceof ValidationError) {
         return response(HttpStatus.BAD_REQUEST, error.code, error.message, error.details);
     }
     if (error instanceof NotFoundError) {
-        const status =
-            operation === "command" && error.code === "WALLET_NOT_FOUND"
-                ? HttpStatus.UNPROCESSABLE_ENTITY
-                : HttpStatus.NOT_FOUND;
+        const status = error.referencedBy === "payload" ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.NOT_FOUND;
         return response(status, error.code, error.message);
     }
     if (error instanceof IdempotencyConflictError || error instanceof ConflictError) {

@@ -21,6 +21,7 @@ export class NotFoundError extends ApplicationError {
     constructor(
         readonly code: "WALLET_NOT_FOUND" | "TRANSACTION_NOT_FOUND",
         message: string,
+        readonly referencedBy: "resource" | "payload" = "resource",
     ) {
         super(message);
     }

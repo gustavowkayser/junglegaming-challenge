@@ -12,8 +12,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const http = host.switchToHttp();
         const request = http.getRequest<Request>();
         const reply = http.getResponse<Response>();
-        const operation = request.method === "GET" ? "query" : "command";
-        const mapped = httpErrorFor(error, operation);
+        const mapped = httpErrorFor(error);
 
         if (mapped.status >= 500) {
             this.logger.error({
